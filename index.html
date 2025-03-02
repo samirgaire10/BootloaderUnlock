@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Bootloader Unlock Guide</title>
+    <style>
+        :root {
+            --bg-color: #f8f8f8;
+            --container-bg: white;
+            --text-color: #333;
+            --heading-primary: #4285F4;
+            --heading-secondary: #0F9D58;
+            --code-bg: #f5f5f5;
+            --border-color: #eee;
+            --tab-inactive: #f1f1f1;
+            --tab-inactive-text: #333;
+            --warning-bg: #FFEBEE;
+            --warning-border: #F44336;
+            --note-bg: #E8F5E9;
+            --note-border: #4CAF50;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --heading-primary: #8ab4f8;
+            --heading-secondary: #81c995;
+            --code-bg: #2d2d2d;
+            --border-color: #333;
+            --tab-inactive: #2d2d2d;
+            --tab-inactive-text: #bbb;
+            --warning-bg: #3c1a1d;
+            --warning-border: #cf6679;
+            --note-bg: #1e3329;
+            --note-border: #81c995;
+        }
+        
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            transition: all 0.3s ease;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid var(--heading-primary);
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        h1 {
+            color: var(--heading-primary);
+        }
+        
+        h2 {
+            color: var(--heading-secondary);
+            border-left: 4px solid var(--heading-secondary);
+            padding-left: 10px;
+            margin-top: 30px;
+        }
+        
+        .container {
+            background-color: var(--container-bg);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .warning {
+            background-color: var(--warning-bg);
+            border-left: 4px solid var(--warning-border);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .note {
+            background-color: var(--note-bg);
+            border-left: 4px solid var(--note-border);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .step {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background-color: var(--heading-primary);
+            color: white;
+            text-align: center;
+            line-height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        code {
+            background-color: var(--code-bg);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        
+        .code-block {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: monospace;
+        }
+        
+        .disclaimer {
+            font-size: 0.8em;
+            text-align: center;
+            margin-top: 40px;
+            color: #757575;
+        }
+        
+        button {
+            background-color: var(--heading-primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .tab {
+            display: none;
+        }
+        
+        .tab.active {
+            display: block;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+        
+        .tab-btn {
+            background-color: var(--tab-inactive);
+            border: none;
+            color: var(--tab-inactive-text);
+            padding: 10px 20px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+        }
+        
+        .tab-btn.active {
+            background-color: var(--heading-primary);
+            color: white;
+        }
+        
+        /* Theme toggle switch */
+        .theme-switch-wrapper {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .theme-switch {
+            display: inline-block;
+            height: 24px;
+            position: relative;
+            width: 50px;
+        }
+        
+        .theme-switch input {
+            display: none;
+        }
+        
+        .slider {
+            background-color: #ccc;
+            bottom: 0;
+            cursor: pointer;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            background-color: white;
+            bottom: 4px;
+            content: "";
+            height: 16px;
+            left: 4px;
+            position: absolute;
+            transition: .4s;
+            width: 16px;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--heading-primary);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .theme-icon {
+            margin-left: 10px;
+            font-size: 18px;
+        }
+        
+        /* Logo styling */
+        .logo-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+        
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-color: var(--heading-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            margin-right: 10px;
+        }
+        
+        .logo-text {
+            color: var(--text-color);
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        @media (max-width: 700px) {
+            .logo-container, .theme-switch-wrapper {
+                position: relative;
+                top: 0;
+                left: 0;
+                right: 0;
+                margin: 10px auto;
+                justify-content: center;
+            }
+            
+            header {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .theme-switch-wrapper {
+                order: 3;
+                margin-top: 15px;
+            }
+            
+            h1 {
+                margin-top: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="https://github.com/samirgaire10/" class="logo-container" target="_blank">
+        <div class="logo">S</div>
+        <div class="logo-text">samirgaire10</div>
+    </a>
+    <header>
+        
+        
+        <div class="theme-switch-wrapper">
+            <span class="theme-icon">☀️</span>
+            <label class="theme-switch">
+                <input type="checkbox" id="theme-toggle">
+                <span class="slider"></span>
+            </label>
+            <span class="theme-icon">🌙</span>
+        </div>
+        
+        <h1>Android Bootloader Unlock Guide</h1>
+        <p>Learn how to unlock your Android device's bootloader safely</p>
+    </header>
+    
+    <div class="container">
+        <div class="warning">
+            <strong>Warning:</strong> Unlocking your bootloader will:
+            <ul>
+                <li>Void your warranty in most cases</li>
+                <li>Erase all data on your device (factory reset)</li>
+                <li>Make your device less secure</li>
+                <li>Potentially brick your device if done incorrectly</li>
+            </ul>
+            Proceed at your own risk!
+        </div>
+        
+        <h2>What is a Bootloader?</h2>
+        <p>The bootloader is a piece of code that runs before your operating system starts. It tells the phone how to boot up and load the operating system. By default, most Android devices come with a locked bootloader to prevent unauthorized modifications.</p>
+        
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="openTab('prerequisites')">Prerequisites</button>
+            <button class="tab-btn" onclick="openTab('general-method')">General Method</button>
+            <button class="tab-btn" onclick="openTab('specific-brands')">Brand-Specific</button>
+            <button class="tab-btn" onclick="openTab('troubleshooting')">Troubleshooting</button>
+        </div>
+        
+        <div id="prerequisites" class="tab active">
+            <h2>Prerequisites</h2>
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Back up your data</strong>
+                <p>Since unlocking the bootloader will factory reset your device, make sure to back up all important data including photos, contacts, messages, and app data.</p>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Install necessary tools</strong>
+                <p>You'll need to set up Android Debug Bridge (ADB) and Fastboot on your computer:</p>
+                <ul>
+                    <li>Download and install <a href="#" id="android-studio-link">Android Studio</a> (includes ADB and Fastboot)</li>
+                    <li>Or download <a href="#" id="platform-tools-link">Platform Tools</a> directly</li>
+                </ul>
+                <button onclick="showPlatformToolsGuide()">Show Platform Tools Setup Guide</button>
+                <div id="platform-tools-guide" style="display: none; margin-top: 15px;" class="note">
+                    <p><strong>Platform Tools Setup:</strong></p>
+                    <ol>
+                        <li>Download the Platform Tools package for your OS (Windows, macOS, or Linux)</li>
+                        <li>Extract the ZIP file to an easily accessible location</li>
+                        <li>Add the platform-tools directory to your system PATH variable</li>
+                        <li>Open a command prompt/terminal and verify installation by typing: <code>adb --version</code> and <code>fastboot --version</code></li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Enable Developer Options</strong>
+                <p>On your Android device:</p>
+                <ol>
+                    <li>Go to <strong>Settings</strong> → <strong>About phone</strong></li>
+                    <li>Tap on <strong>Build number</strong> 7 times until you see "You are now a developer!"</li>
+                    <li>Go back to <strong>Settings</strong> → <strong>System</strong> → <strong>Developer options</strong></li>
+                    <li>Enable <strong>USB debugging</strong> and <strong>OEM unlocking</strong></li>
+                </ol>
+                <div class="note">
+                    <p>If you don't see the <strong>OEM unlocking</strong> option, your device may not support bootloader unlocking or you need to use a carrier-specific method.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="general-method" class="tab">
+            <h2>General Bootloader Unlock Method</h2>
+            
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Connect your device</strong>
+                <p>Connect your Android device to your computer with a USB cable.</p>
+                <p>When prompted on your device, allow USB debugging.</p>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Verify connection</strong>
+                <p>Open a command prompt or terminal window and type:</p>
+                <div class="code-block">adb devices</div>
+                <p>You should see your device listed. If not, check your USB connection and make sure USB debugging is enabled.</p>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Reboot to bootloader</strong>
+                <p>Enter the following command:</p>
+                <div class="code-block">adb reboot bootloader</div>
+                <p>Your device will restart into fastboot mode.</p>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Verify fastboot connection</strong>
+                <p>Verify your device is detected in fastboot mode:</p>
+                <div class="code-block">fastboot devices</div>
+                <p>You should see your device listed with a serial number.</p>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">5</span>
+                <strong>Unlock the bootloader</strong>
+                <p>Enter the command to unlock the bootloader:</p>
+                <div class="code-block">fastboot flashing unlock</div>
+                <p>For older devices, you might need to use:</p>
+                <div class="code-block">fastboot oem unlock</div>
+                
+                <div class="note">
+                    <p>A confirmation screen will appear on your device. Use the volume buttons to navigate and the power button to confirm.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">6</span>
+                <strong>Wait for the process to complete</strong>
+                <p>Your device will be wiped and the bootloader will be unlocked. This may take a few minutes.</p>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">7</span>
+                <strong>Reboot your device</strong>
+                <p>Once the unlock is complete, reboot your device:</p>
+                <div class="code-block">fastboot reboot</div>
+                <p>The first boot after unlocking will take longer than usual.</p>
+                <div class="warning">
+                    <p>Your device will now show a warning at startup indicating that the bootloader is unlocked and the device is less secure. This is normal.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="specific-brands" class="tab">
+            <h2>Brand-Specific Unlocking Methods</h2>
+            
+            <div class="brand-section">
+                <h3>Google Pixel</h3>
+                <p>Google Pixel devices follow the standard method, but require you to enable OEM unlocking first.</p>
+                <button onclick="toggleDetails('pixel-details')">Show Details</button>
+                <div id="pixel-details" class="details" style="display: none; margin-top: 15px;">
+                    <ol>
+                        <li>Enable Developer Options</li>
+                        <li>Enable USB Debugging</li>
+                        <li>Enable OEM Unlocking</li>
+                        <li>Follow the general method above</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="brand-section">
+                <h3>Samsung</h3>
+                <p>Samsung devices require unlocking the bootloader through the download mode and often require additional steps.</p>
+                <button onclick="toggleDetails('samsung-details')">Show Details</button>
+                <div id="samsung-details" class="details" style="display: none; margin-top: 15px;">
+                    <ol>
+                        <li>Enable Developer Options</li>
+                        <li>Enable USB Debugging</li>
+                        <li>Enable OEM Unlocking</li>
+                        <li>Power off the device</li>
+                        <li>Boot into Download Mode (typically Volume Up + Volume Down + Power while connected to PC)</li>
+                        <li>Follow on-screen instructions to unlock</li>
+                    </ol>
+                    <div class="warning">
+                        <p>Note: Many Samsung devices in the US (especially carrier versions) have permanently locked bootloaders that cannot be unlocked.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="brand-section">
+                <h3>Xiaomi</h3>
+                <p>Xiaomi devices require obtaining an unlock code from Xiaomi's website.</p>
+                <button onclick="toggleDetails('xiaomi-details')">Show Details</button>
+                <div id="xiaomi-details" class="details" style="display: none; margin-top: 15px;">
+                    <ol>
+                        <li>Create a Xiaomi account and bind it to your device</li>
+                        <li>Wait for the mandatory waiting period (typically 7-30 days)</li>
+                        <li>Request an unlock code from the <a href="#" id="mi-unlock-link">Mi Unlock Portal</a></li>
+                        <li>Download and run the Mi Unlock Tool on your PC</li>
+                        <li>Follow the instructions in the tool to unlock your device</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="brand-section">
+                <h3>OnePlus</h3>
+                <p>OnePlus devices have a more straightforward unlocking process.</p>
+                <button onclick="toggleDetails('oneplus-details')">Show Details</button>
+                <div id="oneplus-details" class="details" style="display: none; margin-top: 15px;">
+                    <ol>
+                        <li>Enable Developer Options</li>
+                        <li>Enable USB Debugging</li>
+                        <li>Enable Advanced Reboot and OEM Unlocking</li>
+                        <li>Reboot to bootloader via Settings or by holding Volume Up + Power</li>
+                        <li>Connect to PC and run: <code>fastboot devices</code> to confirm connection</li>
+                        <li>Run: <code>fastboot oem unlock</code></li>
+                        <li>Confirm on device screen</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        
+        <div id="troubleshooting" class="tab">
+            <h2>Troubleshooting</h2>
+            
+            <div class="issue">
+                <h3>"Command not found" error</h3>
+                <p><strong>Problem:</strong> When typing ADB or fastboot commands, you get "command not found" errors.</p>
+                <p><strong>Solution:</strong> Make sure you've properly installed ADB and fastboot, and that they're in your system PATH or you're running commands from the directory containing the tools.</p>
+            </div>
+            
+            <div class="issue">
+                <h3>Device not detected</h3>
+                <p><strong>Problem:</strong> Your device doesn't show up when running <code>adb devices</code> or <code>fastboot devices</code>.</p>
+                <p><strong>Solution:</strong></p>
+                <ul>
+                    <li>Check your USB cable (try a different one)</li>
+                    <li>Make sure USB debugging is enabled</li>
+                    <li>Install proper USB drivers for your device</li>
+                    <li>Try a different USB port</li>
+                    <li>Restart your computer and phone</li>
+                </ul>
+            </div>
+            
+            <div class="issue">
+                <h3>"OEM Unlock" option missing</h3>
+                <p><strong>Problem:</strong> The "OEM Unlock" option is not visible in Developer Options.</p>
+                <p><strong>Solution:</strong> This usually means:</p>
+                <ul>
+                    <li>Your device doesn't support bootloader unlocking</li>
+                    <li>Your carrier has blocked bootloader unlocking</li>
+                    <li>You need to insert a SIM card</li>
+                    <li>You need to connect to the internet and wait for a period</li>
+                </ul>
+            </div>
+            
+            <div class="issue">
+                <h3>"Unlock failed" error</h3>
+                <p><strong>Problem:</strong> You receive an "unlock failed" message when trying to unlock the bootloader.</p>
+                <p><strong>Solution:</strong></p>
+                <ul>
+                    <li>Make sure OEM Unlocking is enabled</li>
+                    <li>Try using the manufacturer-specific unlock method for your device</li>
+                    <li>Some devices require a special unlock key or code from the manufacturer</li>
+                    <li>Check if your device model supports bootloader unlocking</li>
+                </ul>
+            </div>
+            
+            <div class="issue">
+                <h3>Device stuck at bootloader logo</h3>
+                <p><strong>Problem:</strong> Your device gets stuck at the bootloader or manufacturer logo after unlocking.</p>
+                <p><strong>Solution:</strong></p>
+                <ul>
+                    <li>Wait longer (first boot can take 10+ minutes)</li>
+                    <li>Force restart your device by holding the power button</li>
+                    <li>Try entering recovery mode and perform a factory reset</li>
+                    <li>If all else fails, flash the stock firmware using fastboot</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="disclaimer">
+            <p>Disclaimer: This guide is provided for educational purposes only. Unlocking your bootloader may void your warranty and can potentially damage your device if not done correctly. Always research the specific method for your device model before proceeding.</p>
+        </div>
+    </div>
+    
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        
+        // Check for saved theme preference or use preferred color scheme
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+        const currentTheme = localStorage.getItem('theme');
+        
+        if (currentTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            themeToggle.checked = true;
+        } else if (currentTheme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+            themeToggle.checked = false;
+        } else if (prefersDarkScheme.matches) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            themeToggle.checked = true;
+        }
+        
+        // Toggle theme function
+        function switchTheme(e) {
+            if (e.target.checked) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        
+        // Add event listener to theme toggle
+        themeToggle.addEventListener('change', switchTheme, false);
+        
+        function openTab(tabName) {
+            var i, tabs, tabButtons;
+            
+            tabs = document.getElementsByClassName("tab");
+            for (i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+            
+            tabButtons = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove("active");
+            }
+            
+            document.getElementById(tabName).classList.add("active");
+            
+            // Find and activate the clicked button
+            for (i = 0; i < tabButtons.length; i++) {
+                if (tabButtons[i].textContent.toLowerCase().includes(tabName.replace(/-/g, ' '))) {
+                    tabButtons[i].classList.add("active");
+                }
+            }
+        }
+        
+        function showPlatformToolsGuide() {
+            var guide = document.getElementById("platform-tools-guide");
+            if (guide.style.display === "none") {
+                guide.style.display = "block";
+            } else {
+                guide.style.display = "none";
+            }
+        }
+        
+        function toggleDetails(detailsId) {
+            var details = document.getElementById(detailsId);
+            if (details.style.display === "none") {
+                details.style.display = "block";
+            } else {
+                details.style.display = "none";
+            }
+        }
+        
+        // Prevent actual navigation for demonstration links (except logo)
+        document.addEventListener('DOMContentLoaded', function() {
+            var links = document.querySelectorAll('a:not(.logo-container)');
+            links.forEach(function(link) {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    alert('This is a demonstration website. In a real implementation, this link would take you to: ' + this.id);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
